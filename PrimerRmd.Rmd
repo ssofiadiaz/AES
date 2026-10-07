@@ -1,0 +1,27 @@
+---
+title: "Análisis del Abandono y Rendimiento Académico Universitario"
+author: "Sofia"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+# Cargar datos especificando el separador ';'
+datos <- read.csv("data.csv", sep = ";")
+
+# Convertir la variable objetivo a factor
+datos$Target <- as.factor(datos$Target)
+
+# Ver las primeras filas
+head(datos)
+
+# Distribución del estado de los estudiantes
+table(datos$Target)
+
+# Gráfico de rendimiento en el 1º semestre
+boxplot(Curricular.units.1st.sem..approved. ~ Target, data = datos,
+        col = c("darksalmon", "lightblue", "lightgreen"),
+        main = "Asignaturas aprobadas en 1º Semestre por Estado",
+        xlab = "Estado", ylab = "Aprobadas")
