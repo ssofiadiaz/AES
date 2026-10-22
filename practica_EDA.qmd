@@ -113,17 +113,69 @@ El análisis empírico y la posterior interpretación de los resultados deben co
 * Martins, M. V., Tolledo, D., Machado, J., Baptista, L. M. T., & Realinho, V. (2021). *Early prediction of student's performance in higher education: a case study*. En *Trends and Applications in Information Systems and Technologies* (WorldCIST 2021). 
 * Repositorio oficial del conjunto de datos: [UCI Machine Learning Repository - Dataset 697](https://archive.ics.uci.edu/dataset/697/predict+students+dropout+and+academic+success)
 
-# 2. Planteamiento inicial del EDA
 
-El análisis parte de una limpieza y verificación del conjunto de datos, y después avanza de lo simple a lo combinado, con un hilo conductor: ¿qué distingue a quienes abandonan de quienes se gradúan, y con qué antelación puede detectarse?
+# 2. PLANTEAMIENTO INICIAL DEL EDA (METODOLOGÍA Y PLANIFICACIÓN ESTRATÉGICA)
 
-1. **Limpieza y verificación**: comprobar la lectura del archivo, nombres, tipos de variable, duplicados, valores fuera de rango e incoherencias entre variables.
-2. **Visión general**: describir la distribución de Target y el perfil típico del estudiante.
-3. **Comparación variable a variable**: contrastar cada variable (de ingreso, socioeconómica y académica) con la situación final, para ver cuáles se asocian con el abandono.
-4. **Combinación de variables**: cruzar varias a la vez (por ejemplo, rendimiento del primer semestre según beca, curso o deuda) para ver si el efecto de una variable cambia según otra, o si un factor solo parece influir porque va unido a otro.
-5. **Detección temprana**: comparar lo que ya se sabe en la matrícula con lo que añaden el 1.er y el 2.º semestre.
+Para evitar un enfoque puramente descriptivo o la generación automatizada de gráficos sin dirección científica, el equipo ha diseñado un **plan de trabajo estructurado**. El análisis parte de una limpieza y verificación exhaustiva del conjunto de datos, y después avanza **de lo simple a lo combinado**, guiado por un hilo conductor central: **¿qué distingue a quienes abandonan de quienes se gradúan, y con qué antelación puede detectarse?**
 
-En cada paso se elegirá la técnica según el tipo de variable, se comprobarán los supuestos y se reportará el tamaño del efecto junto al p-valor. Se documentarán los problemas hallados y las decisiones tomadas.
+---
+
+## 2.1 Fases del Plan de Exploración y Enfoque Metodológico
+
+En cada uno de los pasos descritos a continuación, se seleccionará la técnica estadística adecuada según la tipología de las variables, se comprobarán rigurosamente los supuestos teóricos y **se reportará el tamaño del efecto junto con el correspondiente p-valor**, documentando minuciosamente cada decisión tomada y problema hallado:
+
+### 1. Limpieza y verificación
+* Comprobación formal de la lectura correcta del archivo CSV y revisión de la integridad estructural.
+* Verificación de nombres de columnas, control de tipologías de variables (conversión de categóricas a factores), detección de filas duplicadas y análisis de posibles valores fuera de rango o incoherencias lógicas entre variables asociadas.
+
+### 2. Visión general
+* Descripción univariante de la distribución de la variable objetivo (`Target`) y caracterización global del perfil típico del estudiante universitario al momento de la admisión.
+
+### 3. Comparación variable a variable
+* Contraste individual de cada variable explicativa (de ingreso, socioeconómica y académica) frente a la situación final (`Target`) para identificar de forma aislada qué factores muestran una asociación directa con el abandono escolar.
+
+### 4. Combinación de variables
+* Análisis multivariante cruzando varias dimensiones de forma simultánea (por ejemplo, evaluar el rendimiento del primer semestre condicionado a la posesión de beca, titulación cursada o situación de deuda económica). 
+* Permite determinar si el efecto de una variable se modifica en función de otra o si un factor aparenta influir en el abandono únicamente por estar asociado a un tercer elemento.
+
+### 5. Detección temprana
+* Comparación evolutiva del poder predictivo y descriptivo: evaluando el horizonte de información disponible estricto en el momento de la matrícula frente a la ganancia informativa aportada por el rendimiento académico del 1.er y del 2.º semestre.
+
+---
+
+## 3 Preguntas de Partida e Interés de la Investigación
+
+Para dotar al EDA de profundidad analítica, la exploración contrastará las siguientes hipótesis clave:
+
+::: {.callout-note icon=true}
+## 1. Distribución de la variable objetivo y desbalance de clases
+* **Pregunta:** ¿Cómo se distribuyen los estudiantes según su situación académica final (abandono, matriculado o graduado) y hasta qué punto están desbalanceadas las clases?
+* **Objetivo:** Cuantificar el tamaño absoluto y relativo de cada grupo (`Dropout`, `Enrolled`, `Graduate`) para decidir cómo tratar la categoría *Enrolled* (cuyo resultado final no es conocido dentro del horizonte del dataset) y determinar si las comparaciones estadísticas posteriores deben basarse en porcentajes condicionados por grupo en lugar de recuentos absolutos.
+:::
+
+::: {.callout-note icon=true}
+## 2. El umbral crítico del primer semestre frente a la nota de acceso
+* **Pregunta:** ¿Hasta qué punto el rendimiento académico acumulado en el primer semestre (`Curricular units 1st sem (approved)` y su nota media) actúa como un discriminador más potente del éxito o abandono frente a la nota de admisión universitaria (`Admission grade`)?
+* **Objetivo:** Evaluar la capacidad predictiva relativa entre la trayectoria previa del estudiante (nota de admisión) y su adaptación inicial al contexto universitario (desempeño en el primer semestre) para determinar en qué momento se genera la brecha crítica de abandono.
+:::
+
+::: {.callout-note icon=true}
+## 3. Vulnerabilidad financiera y su impacto real
+* **Pregunta:** ¿Existe una dependencia estadísticamente significativa entre el estado de impago de tasas (`Debtor`) y la beca institucional (`Scholarship holder`) respecto al abandono, y cómo interactúan con las capacidades previas del alumno?
+* **Objetivo:** Cuantificar el impacto de las restricciones socioeconómicas y la efectividad de las becas como mecanismo protector frente al riesgo de abandono escolar temprano, aislando el factor económico del rendimiento académico puro.
+:::
+
+::: {.callout-note icon=true}
+## 4. Factores demográficos y modalidad de estudio
+* **Pregunta:** ¿De qué manera la edad al matricularse (`Age at enrollment`) y la modalidad de asistencia (`Daytime/evening attendance`) modulan la propensión al abandono universitario?
+* **Objetivo:** Identificar perfiles sociodemográficos de mayor vulnerabilidad (tales como estudiantes maduros o matriculados en régimen nocturno) para comprender si la incompatibilidad con responsabilidades laborales o familiares afecta de forma diferencial al éxito académico.
+:::
+
+::: {.callout-note icon=true}
+## 5. Sensibilidad macroeconómica del entorno
+* **Pregunta:** ¿Ejercen las variables macroeconómicas regionales (`Unemployment rate`, `Inflation rate`, `GDP`) un efecto apreciable en las tasas globales de éxito académico de las distintas cohortes?
+* **Objetivo:** Determinar si el contexto socioeconómico externo actúa como un factor coyuntural que condiciona la continuidad universitaria, incentivando la salida prematura hacia el mercado laboral en momentos de variación económica.
+:::
 
 # 3.Preguntas
 Pregunta 1. **¿Cómo se distribuyen los estudiantes según su situación académica final (abandono, matriculado o graduado) y hasta qué punto están desbalanceadas las clases?**
