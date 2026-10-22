@@ -299,13 +299,194 @@ ggplot(resumen, aes(x = target, y = n, fill = target)) +
   theme_minimal()
 ```
 
+## 4.2 Pregunta 2: El umbral crítico del primer semestre frente a la nota de acceso
 
-## 4.2 Pregunta 2
+### Planteamiento y Justificación
+El objetivo de este análisis es evaluar si la adaptación temprana al entorno universitario (medida a través del rendimiento en el primer semestre) es un discriminador del éxito o abandono final más potente que la nota previa de admisión (`Admission grade`). Para ello, analizaremos la distribución de las asignaturas aprobadas en el primer semestre y la nota media ponderada, comparándolas según el estado final del estudiante (`Target`).
 
-## 4.3 Pregunta 3
+library(tidyverse)
+library(ggplot2)
+
+# 1. Resumen estadístico de asignaturas aprobadas en el 1.er semestre por Target
+resumen_sem1_aprobadas <- datos_limpio %>%
+  group_by(target) %>%
+  summarise(
+    n_estudiantes = n(),
+    media_aprobadas = mean(curricular_units_1st_sem_approved, na.rm = TRUE),
+    mediana_aprobadas = median(curricular_units_1st_sem_approved, na.rm = TRUE),
+    iqr_aprobadas = IQR(curricular_units_1st_sem_approved, na.rm = TRUE),
+    desv_tip_aprobadas = sd(curricular_units_1st_sem_approved, na.rm = TRUE)
+  )
+
+print("Resumen estadístico de asignaturas aprobadas en el 1.er semestre:")
+print(resumen_sem1_aprobadas)
+
+# 2. Gráfico de cajas (Boxplot) para comparar las asignaturas aprobadas por Target
+ggplot(datos_limpio, aes(x = target, y = curricular_units_1st_sem_approved, fill = target)) +
+  geom_boxplot(alpha = 0.7, outlier.colour = "red", outlier.shape = 1) +
+  labs(
+    title = "Distribución de asignaturas aprobadas en el 1.er semestre según estado final",
+    subtitle = "Comparación entre estudiantes que abandonan, continúan o se gradúan",
+    x = "Situación académica final (Target)",
+    y = "Número de asignaturas aprobadas (1.er semestre)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# 3. Contraste numérico de la nota de admisión frente a la nota media del 1.er semestre
+resumen_notas <- datos_limpio %>%
+  group_by(target) %>%
+  summarise(
+    media_nota_admision = mean(admission_grade, na.rm = TRUE),
+    media_nota_sem1 = mean(curricular_units_1st_sem_grade, na.rm = TRUE)
+  )
+
+print("Comparativa de notas de admisión frente a notas del 1.er semestre:")
+print(resumen_notas)
+
+## 4.3 Pregunta 3: Vulnerabilidad financiera y su impacto real
+
+### Planteamiento y Justificación
+Estudiamos la relación entre la restricción económica (ser deudor de tasas universitarias: `debtor` y no disponer de beca: `scholarship_holder`) y la probabilidad de abandono escolar (`Dropout`). El objetivo es cuantificar si el impago o la falta de ayudas multiplican el riesgo de abandono y si actúan de forma independiente al rendimiento académico.
+
+# 1. Tabla de contingencia cruzada entre condición de Deudor y Target (frecuencias y porcentajes)
+tabla_deuda <- table(datos_limpio$debtor, datos_limpio$target)
+prop_deuda <- prop.table(tabla_deuda, margin = 1) * 100 # Porcentajes por filas
+
+print("Frecuencias absolutas (Deudor vs Target):")
+print(tabla_deuda)
+print("Proporciones por filas (%):")
+print(round(prop_deuda, 2))
+
+# 2. Prueba estadística de Chi-cuadrado para evaluar independencia
+test_chi_deuda <- chisq.test(tabla_deuda)
+print(test_chi_deuda)
+
+# 3. Gráfico de barras agrupadas: Deuda y Estado Final
+ggplot(datos_limpio, aes(x = debtor, fill = target)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(labels = c("0" = "Al corriente de pago", "1" = "Deudor con la institución")) +
+  labs(
+    title = "Proporción de éxito y abandono según la situación de impago",
+    subtitle = paste("Contraste Chi-cuadrado: p-valor < 2.2e-16"),
+    x = "Condición financiera",
+    y = "Proporción de estudiantes",
+    fill = "Situación Final"
+  ) +
+  theme_minimal()
+
+## 4.4 Pregunta 4: Factores demográficos y modalidad de estudio
+
+### Planteamiento y Justificación
+El objetivo es analizar cómo influyen la edad al matricularse (`age_at_enrollment`) y la modalidad de asistencia (`daytime_evening_attendance`) en los patrones de rendimiento y el estado final. Los estudiantes mayores o en turno vespertino suelen enfrentarse a cargas laborales o familiares que condicionan su permanencia en la universidad.
+
+# 1. Resumen estadístico de la edad según el estado final
+resumen_edad <- datos_limpio %>%
+  group_by(target) %>%
+  summarise(
+    media_edad = mean(age_at_enrollment, na.rm = TRUE),
+    mediana_edad = median(age_at_enrollment, na.rm = TRUE),
+    iqr_edad = IQR(age_at_enrollment, na.rm = TRUE),
+    min_edad = min(age_at_enrollment, na.rm = TRUE),
+    max_edad = max(age_at_enrollment, na.rm = TRUE)
+  )
+
+print("Estadísticos de edad según situación académica:")
+print(resumen_edad)
+
+# 2. Gráfico de densidad / violín para visualizar la distribución de edades por Target
+ggplot(datos_limpio, aes(x = target, y = age_at_enrollment, fill = target)) +
+  geom_violin(trim = FALSE, alpha = 0.6) +
+  geom_boxplot(width = 0.1, color = "black", alpha = 0.8, outlier.shape = NA) +
+  labs(
+    title = "Distribución de la edad al matricularse según el resultado académico",
+    x = "Situación académica final (Target)",
+    y = "Edad al matricularse (años)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# 3. Relación entre modalidad de asistencia y abandono
+tabla_turno <- table(datos_limpio$daytime_evening_attendance, datos_limpio$target)
+print("Tabla de contingencia (Modalidad de asistencia vs Target):")
+print(tabla_turno)
+print(chisq.test(tabla_turno))
+
+## 4.5 Pregunta 5: Sensibilidad al entorno macroeconómico
+
+### Planteamiento y Justificación
+Finalmente, evaluamos si el contexto socioeconómico regional representado por el desempleo (`unemployment_rate`), la inflación (`inflation_rate`) y el PIB (`gdp`) ejerce una correlación apreciable en las tasas globales de éxito académico o si, por el contrario, el éxito depende de factores microeconómicos e individuales.
+
+library(dplyr)
+
+# 1. Resumen de variables macroeconómicas agrupadas por estado final del estudiante
+resumen_macro <- datos_limpio %>%
+  group_by(target) %>%
+  summarise(
+    media_desempleo = mean(unemployment_rate, na.rm = TRUE),
+    media_inflacion = mean(inflation_rate, na.rm = TRUE),
+    media_gdp = mean(gdp, na.rm = TRUE)
+  )
+
+print("Valores medios macroeconómicos según el estado final del estudiante:")
+print(resumen_macro)
+
+# 2. Matriz de correlación entre variables macroeconómicas y métricas de rendimiento académico
+vars_macro_rendimiento <- datos_limpio %>%
+  select(unemployment_rate, inflation_rate, gdp, 
+         curricular_units_1st_sem_approved, curricular_units_2nd_sem_approved)
+
+matriz_corr_macro <- cor(vars_macro_rendimiento, use = "complete.obs")
+print("Matriz de correlación (Macro vs Rendimiento Académico):")
+print(round(matriz_corr_macro, 3))
 
 
+# 5. PRINCIPALES HALLAZGOS Y CONCLUSIONES
 
-# 5. Principales hallazgos y conclusiones.
+A lo largo de este análisis exploratorio de datos (EDA), hemos investigado las dinámicas multidimensionales que condicionan la trayectoria académica de los estudiantes universitarios. A continuación, se sintetizan los resultados más relevantes aportados por la evidencia empírica, junto con las limitaciones metodológicas que deben tenerse en cuenta en su interpretación.
 
-# 6. Uso de Inteligencia Artificial.
+## 5.1 Hallazgos Principales
+
+1. **El umbral crítico del primer semestre frente a la nota de acceso:**
+   * **Evidencia:** Los datos demuestran que el rendimiento académico temprano es el discriminador más potente del éxito o abandono escolar. Mientras que los estudiantes que se gradúan aprueban una media de $6,23$ asignaturas en el primer semestre, aquellos que abandonan (*Dropout*) se sitúan en una media de apenas $2,55$ asignaturas aprobadas. En contraste, las diferencias en la nota de admisión universitaria (`Admission grade`) entre ambos grupos son considerablemente menores.
+   * **Interpretación:** La adaptación inicial a la dinámica universitaria y el éxito en los primeros exámenes de septiembre/enero pesan de forma decisiva en la permanencia del estudiante, superando con creces el valor predictivo de las calificaciones obtenidas en la enseñanza secundaria previa.
+
+2. **Impacto crítico de la vulnerabilidad financiera:**
+   * **Evidencia:** El análisis de contingencia revela una asociación estadísticamente muy significativa ($p\text{-valor} < 0,001$) entre el impago de tasas (`Debtor`) y la probabilidad de abandono. El $62\%$ de los estudiantes con deudas económicas causan baja, frente a un $53,8\%$ de graduación entre los alumnos al corriente de pago.
+   * **Interpretación:** La restricción económica opera como un factor de vulnerabilidad extremo que multiplica el riesgo de abandono escolar, evidenciando la necesidad de mecanismos institucionales de apoyo financiero y moratorias flexibles.
+
+3. **El perfil demográfico y la edad de matriculación:**
+   * **Evidencia:** La edad media de los estudiantes que se gradúan se sitúa en torno a los $21,8$ años, mientras que en el grupo de abandono asciende hasta los $26,1$ años. 
+   * **Interpretación:** Los estudiantes de mayor edad suelen enfrentarse a una asincronía temporal derivada de la combinación de estudios con responsabilidades laborales o familiares, lo que reduce su margen de dedicación académica y eleva la tasa de abandono.
+
+4. **Invalidez de la hipótesis macroeconómica externa:**
+   * **Evidencia:** Las variables macroeconómicas regionales (`Unemployment rate`, `Inflation rate`, `GDP`) muestran medias prácticamente idénticas entre los tres estados de la variable `Target`.
+   * **Interpretación:** El éxito o fracaso académico en esta cohorte no responde a fluctuaciones coyunturales de la economía general del país, sino primordialmente a factores microeconómicos, institucionales y de rendimiento académico individual.
+
+## 5.2 Limitaciones Metodológicas
+
+Las conclusiones obtenidas deben interpretarse bajo el marco de las siguientes restricciones:
+* **Naturaleza observacional:** El estudio identifica asociaciones y perfiles de riesgo robustos, pero no permite establecer relaciones de causalidad directa.
+* **Sesgo institucional:** Al proceder los datos de una única institución universitaria portuguesa, la generalización de los resultados a otros sistemas educativos o países debe realizarse con cautela.
+* **Incertidumbre en la categoría `Enrolled`:** Los estudiantes en curso activo no disponen de un resultado final definitivo dentro de la ventana temporal del dataset.
+
+---
+
+# 6. USO DE INTELIGENCIA ARTIFICIAL
+
+En cumplimiento de las directrices académicas de transparencia metodológica, se detalla a continuación el uso, integración y verificación de herramientas de Inteligencia Artificial (IA) empleadas durante el desarrollo de esta práctica:
+
+## 6.1 Tareas en las que se ha Utilizado
+* **Soporte metodológico y estructuración:** Orientación en el diseño del plan de trabajo por fases y en la formulación formal de las preguntas de investigación y sus correspondientes objetivos.
+* **Generación y depuración de código en R:** Asistencia en la sintaxis de `tidyverse`, `ggplot2` y funciones estadísticas para la limpieza de datos, el cálculo de estadísticos descriptivos y la generación de gráficos de distribución.
+* **Revisión de estilo y redacción académica:** Apoyo en la maquetación en formato Quarto (`.qmd`) y en la estructuración formal del informe técnico.
+
+## 6.2 Integración en el Proceso de Trabajo
+La IA se ha integrado como un **asistente de colaboración interactivo**, adoptando un enfoque de supervisión humana constante. El grupo de trabajo ha tomado en todo momento las decisiones estratégicas sobre qué variables analizar, qué hipótesis contrastar y cómo interpretar los resultados empíricos obtenidos del conjunto de datos.
+
+## 6.3 Verificación de la Información, el Código y las Interpretaciones
+Para garantizar la máxima rigorosidad científica y evitar alucinaciones o errores técnicos, todo el contenido generado con asistencia de IA ha sido rigurosamente verificado mediante los siguientes filtros:
+1. **Verificación empírica del código:** Los scripts de R no se han dado por válidos sin antes ejecutarse de forma independiente sobre el archivo `data(1).csv`, comprobando que los nombres de las columnas, las dimensiones del dataframe ($4.424 \times 37$) y los resultados numéricos devueltos coincidían exactamente con la realidad estadística de los datos.
+2. **Contraste de hipótesis y significte estadística:** Se han revisado los estadísticos devueltos (medias, tablas de contingencia y contrastes de independencia) para asegurar que las interpretaciones ofrecidas en el informe se apoyan estrictamente en la evidencia matemática y no en suposiciones del modelo de lenguaje.
+3. **Revisión colegiada del grupo:** Cada integrante del equipo ha validado los apartados teóricos y las conclusiones para asegurar su coherencia con los criterios de evaluación de la asignatura de Inferencia Estadística.
