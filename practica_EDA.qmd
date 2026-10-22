@@ -16,16 +16,13 @@ execute:
 
 El conjunto de datos analizado se titula ***Predict Students' Dropout and Academic Success*** (*Predictor de Éxito y Abandono Escolar*), albergado y disponible públicamente en el **UCI Machine Learning Repository**. Fue donado oficialmente el 12 de diciembre de 2021.
 
-::: {.callout-note icon=true}
 ## Contexto y propósito del proyecto
 El dataset se enmarca en un proyecto de investigación institucional enfocado en la problemática del fracaso y el abandono escolar temprano en la educación superior. Su contexto responde a la necesidad apremiante de las universidades de comprender los múltiples factores multidimensionales que condicionan la trayectoria académica de los estudiantes. El **propósito central** de este análisis exploratorio es identificar perfiles de riesgo y factores determinantes del rendimiento, contribuyendo a la detección temprana de estudiantes en situación vulnerable para el diseño de políticas preventivas de éxito universitario.
-:::
 
 - **Financiación y marco institucional:** El desarrollo del conjunto de datos y la investigación asociada se integran dentro del programa **SATDAP – Capacitación da Administração Pública** (subvención *POCI-05-5762-FSE-000191*, Portugal), lo que refuerza el trasfondo empírico y real de los registros analizados.
 - **Licencia de uso:** Creative Commons Attribution 4.0 International (**CC BY 4.0**).
 - **Procedencia y recopilación:** Según la documentación oficial de los autores, los datos proceden de la integración de **varias bases de datos disjuntas** procedentes de los sistemas de gestión administrativa de una institución de educación superior portuguesa. Los creadores aplicaron un riguroso preprocesamiento inicial para tratar anomalías, valores atípicos inexplicables y valores faltantes; esto explica la inexistencia de valores perdidos (*Missing Values / NA*) en el dataset bruto suministrado, cuyo tratamiento exacto forma parte del filtrado primario institucional.
 
----
 
 ## 1.2 ¿Qué representa una observación?
 
@@ -36,7 +33,6 @@ Cada individuo constituye un vector multidimensional compuesto por **37 variable
 1. **Información estática de origen:** Datos conocidos de antemano en el momento estricto de la matriculación (trayectoria académica previa, perfil demográfico, factores socioeconómicos y antecedentes familiares).
 2. **Información dinámica de progreso académico:** Métricas detalladas sobre el rendimiento y la progresión del estudiante al término del **1.er y del 2.º semestre** (asignaturas matriculadas, convalidadas, evaluadas, aprobadas y calificaciones medias).
 
----
 
 ## 1.3 Variable Objetivo (`Target`)
 
@@ -48,12 +44,9 @@ La variable objetivo (`Target`) es una variable categórica tricotómica que cla
 | `Enrolled` | **Matriculado** | El estudiante continúa matriculado y cursando la titulación activamente. |
 | `Graduate` | **Graduado** | El estudiante ha completado con éxito los créditos y se ha graduado. |
 
-::: {.callout-warning icon=true}
 ## Nota metodológica sobre el equilibrio de clases
 La propia documentación del repositorio advierte de la existencia de un **fuerte desbalance de clases** en esta variable objetivo, aspecto que deberá ser considerado cuidadosamente durante las fases de visualización y modelado estadístico posterior.
-:::
 
----
 
 ## 1.4 Clasificación Detallada de las Variables Explicativas
 
@@ -100,7 +93,6 @@ Para un mejor rigor analítico, las 36 variables explicativas se estructuran en 
 * `Inflation rate`: Tasa de inflación interanual ($\%$).
 * `GDP`: Producto Interior Bruto (PIB), empleado como indicador sintético de la coyuntura y riqueza macroeconómica.
 
----
 
 ## 1.5 Limitaciones de Partida
 
@@ -113,9 +105,7 @@ El análisis empírico y la posterior interpretación de los resultados deben co
 3. **Horizonte temporal de la categoría `Enrolled`:** Los estudiantes etiquetados como *Enrolled* se encuentran en una situación intermedia cuyo resultado final (éxito o abandono futuro) no queda reflejado en el alcance temporal del dataset.
 4. **Preprocesamiento opaco previo:** Aunque el dataset está libre de valores nulos (*NA*), el filtrado y depuración inicial ejecutado por los autores originales limita el control absoluto sobre posibles censuras previas en las observaciones originales.
 5. **Desfase temporal predictivo:** Las variables correspondientes al segundo semestre se conocen de forma tardía; si bien son excelentes para describir retrospectivamente el rendimiento anual, poseen limitaciones operativas para la alerta temprana en tiempo real antes de finalizar el curso.
-:::
 
----
 
 ## 1.6 Referencias Bibliográficas Oficiales
 
