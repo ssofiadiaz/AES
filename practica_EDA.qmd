@@ -1,25 +1,28 @@
 ---
 title: "EDA: abandono y éxito académico"
-subtitle: "Práctica de Inferencia estadística"
+subtitle: "Inferencia Estadística · Grado en Ciencia e Ingeniería de Datos · Curso 2026/27"
 author: "Sofía Díaz, Diego Sánchez, Shenghui Zhu"
+date: today
+lang: es
 format:
   html:
     toc: true
+    toc-depth: 3
+    toc-title: "Índice"
     embed-resources: true
+    code-fold: true
 execute:
   warning: false
+  message: false
 ---
-
 # 1. DESCRIPCIÓN Y PROCEDENCIA DE LOS DATOS
 
 ## 1.1 Origen, Contexto y Marco Institucional
 
 El conjunto de datos analizado se titula ***Predict Students' Dropout and Academic Success*** (*Predictor de Éxito y Abandono Escolar*), albergado y disponible públicamente en el **UCI Machine Learning Repository**. Fue donado oficialmente el 12 de diciembre de 2021.
 
-::: {.callout-note icon=true}
-## Contexto y propósito del proyecto
+### Contexto y propósito del proyecto
 El dataset se enmarca en un proyecto de investigación institucional enfocado en la problemática del fracaso y el abandono escolar temprano en la educación superior. Su contexto responde a la necesidad apremiante de las universidades de comprender los múltiples factores multidimensionales que condicionan la trayectoria académica de los estudiantes. El **propósito central** de este análisis exploratorio es identificar perfiles de riesgo y factores determinantes del rendimiento, contribuyendo a la detección temprana de estudiantes en situación vulnerable para el diseño de políticas preventivas de éxito universitario.
-:::
 
 - **Financiación y marco institucional:** El desarrollo del conjunto de datos y la investigación asociada se integran dentro del programa **SATDAP – Capacitación da Administração Pública** (subvención *POCI-05-5762-FSE-000191*, Portugal), lo que refuerza el trasfondo empírico y real de los registros analizados.
 
@@ -54,7 +57,7 @@ La variable objetivo (`Target`) es una variable categórica tricotómica que cla
 ::: {.callout-warning icon=true}
 ## Nota metodológica sobre el equilibrio de clases
 La propia documentación del repositorio advierte de la existencia de un **fuerte desbalance de clases** en esta variable objetivo, aspecto que deberá ser considerado cuidadosamente durante las fases de visualización y modelado estadístico posterior.
-:::
+::: 
 
 ---
 
@@ -109,14 +112,15 @@ Para un mejor rigor analítico, las 36 variables explicativas se estructuran en 
 
 El análisis empírico y la posterior interpretación de los resultados deben contextualizarse bajo las siguientes restricciones metodológicas inherentes al origen de los datos:
 
-::: {.callout-important icon=true}
-## Consideraciones al interpretar los resultados
-1. **Sesgo de contexto institucional:** Los datos proceden de **una única institución de educación superior portuguesa**, por lo que las conclusiones obtenidas no son directamente, países o sistemas educativos con normativas diferentes. extrapolables a otros marcos universitarios
+1. **Sesgo de contexto institucional:** Los datos proceden de **una única institución de educación superior portuguesa**, por lo que las conclusiones obtenidas no son directamente extrapolables a otros marcos universitarios, países o sistemas educativos con normativas diferentes.
+
 2. **Naturaleza observacional:** Al tratarse de un estudio observacional retrospectivo, los análisis estadísticos permitirán identificar asociaciones, dependencias y perfiles de riesgo robustos, pero **no garantizan la inferencia de causalidad directa**.
+
 3. **Horizonte temporal de la categoría `Enrolled`:** Los estudiantes etiquetados como *Enrolled* se encuentran en una situación intermedia cuyo resultado final (éxito o abandono futuro) no queda reflejado en el alcance temporal del dataset.
+
 4. **Preprocesamiento opaco previo:** Aunque el dataset está libre de valores nulos (*NA*), el filtrado y depuración inicial ejecutado por los autores originales limita el control absoluto sobre posibles censuras previas en las observaciones originales.
+
 5. **Desfase temporal predictivo:** Las variables correspondientes al segundo semestre se conocen de forma tardía; si bien son excelentes para describir retrospectivamente el rendimiento anual, poseen limitaciones operativas para la alerta temprana en tiempo real antes de finalizar el curso.
-:::
 
 ---
 
@@ -156,7 +160,7 @@ En cada uno de los pasos descritos a continuación, se seleccionará la técnica
 
 ---
 
-## 3 Preguntas de Partida e Interés de la Investigación
+# 3. PREGUNTAS DE PARTIDA E INTERÉS DE LA INVESTIGACIÓN
 
 Para dotar al EDA de profundidad analítica, la exploración contrastará las siguientes hipótesis clave:
 
@@ -179,6 +183,7 @@ Para dotar al EDA de profundidad analítica, la exploración contrastará las si
 :::
 
 ::: {.callout-note icon=true}
+
 ## 4. Factores demográficos y modalidad de estudio
 * **Pregunta:** ¿De qué manera la edad al matricularse (`Age at enrollment`) y la modalidad de asistencia (`Daytime/evening attendance`) modulan la propensión al abandono universitario?
 * **Objetivo:** Identificar perfiles sociodemográficos de mayor vulnerabilidad (tales como estudiantes maduros o matriculados en régimen nocturno) para comprender si la incompatibilidad con responsabilidades laborales o familiares afecta de forma diferencial al éxito académico.
@@ -190,8 +195,9 @@ Para dotar al EDA de profundidad analítica, la exploración contrastará las si
 * **Objetivo:** Determinar si el contexto socioeconómico externo actúa como un factor coyuntural que condiciona la continuidad universitaria, incentivando la salida prematura hacia el mercado laboral en momentos de variación económica.
 :::
 
-# 4.Proceso
+---
 
+# 4. PROCESO
 ## 4.0 Limpieza
 
 ```{r}
@@ -199,37 +205,46 @@ Para dotar al EDA de profundidad analítica, la exploración contrastará las si
 library(tidyverse)
 library(janitor)
 library(caret)
+library(ggplot2)
+library(dplyr)
 ```
 
 ```{r}
-# 1. Lectura y nombres ---------------------------------------------------
-datos_raw <- read.csv2("data.csv", check.names = FALSE, fileEncoding = "UTF-8-BOM")
+# 1. Lectura y nombres 
+datos_raw <- read.csv2("data.csv", check.names = FALSE,
+                       fileEncoding = "UTF-8-BOM", dec = ".")
 
 datos <- datos_raw %>%
-  clean_names() %>%                         # nombres limpios (sin espacios, paréntesis ni tabulador oculto)
-  rename(nationality = nacionality) %>%     # corrige la errata del original
-  # Renombrado robusto: no depende de cómo janitor trate el apóstrofo
+  clean_names() %>%
+  rename(nationality = nacionality) %>%
   rename_with(~ str_replace(.x, "^mother.*qualification$", "mother_qualification")) %>%
   rename_with(~ str_replace(.x, "^father.*qualification$", "father_qualification")) %>%
   rename_with(~ str_replace(.x, "^mother.*occupation$",   "mother_occupation")) %>%
   rename_with(~ str_replace(.x, "^father.*occupation$",   "father_occupation"))
 
-dim(datos)                                  # esperado: 4424 x 37
+numericas <- c("age_at_enrollment", "application_order",
+               "previous_qualification_grade", "admission_grade",
+               "unemployment_rate", "inflation_rate", "gdp")
+
+datos <- datos %>%
+  mutate(across(c(all_of(numericas), contains("curricular_units")),
+                ~ as.numeric(gsub(",", ".", .x))))
+
+dim(datos)                                  
 names(datos)
 
-# 2. Faltantes y duplicados ----------------------------------------------
-sum(is.na(datos))                                        # faltantes totales
-colSums(is.na(datos))[colSums(is.na(datos)) > 0]         # solo columnas con faltantes
-sum(duplicated(datos))                                   # filas duplicadas
+# 2. Faltantes y duplicados 
+sum(is.na(datos))
+colSums(is.na(datos))[colSums(is.na(datos)) > 0]
+sum(duplicated(datos))
 
-# 3. Tipos de variable ---------------------------------------------------
+# 3. Tipos de variable 
 glimpse(datos)
 
-# 4. Categorías de Target ------------------------------------------------
-table(datos$target, useNA = "ifany")        # ¿hay errores de escritura?
+# 4. Categorías de Target 
+table(datos$target, useNA = "ifany")
 
-# 5. Valores fuera de rango ----------------------------------------------
-# Variables binarias: solo deben contener 0 y 1
+# 5. Valores fuera de rango
 binarias <- c("daytime_evening_attendance", "displaced", "educational_special_needs",
               "debtor", "tuition_fees_up_to_date", "gender", "scholarship_holder",
               "international")
@@ -243,25 +258,21 @@ setdiff(c(binarias, categoricas), names(datos))
 
 map(datos[binarias], ~ sort(unique(.x)))
 
-# Variables numéricas: revisar mínimos y máximos
 summary(datos %>% select(age_at_enrollment, application_order,
                          previous_qualification_grade, admission_grade,
                          contains("curricular_units"),
                          unemployment_rate, inflation_rate, gdp))
 
-# 6. Coherencia entre variables ------------------------------------------
-# Aprobadas no pueden superar a las matriculadas
+# 6. Coherencia entre variables 
 sum(datos$curricular_units_1st_sem_approved > datos$curricular_units_1st_sem_enrolled)
 sum(datos$curricular_units_2nd_sem_approved > datos$curricular_units_2nd_sem_enrolled)
 
-# Estudiantes sin ninguna asignatura matriculada en un semestre
 sum(datos$curricular_units_1st_sem_enrolled == 0)
 sum(datos$curricular_units_2nd_sem_enrolled == 0)
 
-# Nota media 0 con asignaturas evaluadas (un 0 puede significar "sin nota")
 sum(datos$curricular_units_1st_sem_grade == 0 & datos$curricular_units_1st_sem_evaluations > 0)
 
-# 7. Conversión de tipos -------------------------------------------------
+# 7. Conversión de tipos 
 datos_limpio <- datos %>%
   mutate(
     across(all_of(setdiff(binarias, c("gender", "daytime_evening_attendance"))), as.factor),
@@ -276,37 +287,85 @@ str(datos_limpio$target)
 glimpse(datos_limpio)
 ```
 
+**Decisiones y problemas encontrados en la limpieza**
 
-## 4.1 Pregunta 1: distribución de la situación académica final
-Preparación y comprobaciones previas
+- **Lectura del archivo:** el CSV usa `;` como separador de campos y `.` como separador decimal. Con `read.csv2()` hay que indicar `dec = "."`; sin ello, las variables decimales (notas y variables macroeconómicas) se leían como texto y los cálculos numéricos fallaban.
+- **Nombres de columnas:** `clean_names()` los normaliza. El nombre de `Daytime/evening attendance` contenía un tabulador oculto y `Nacionality` es una errata del original, que se corrige a `nationality`.
+- **Integridad:** el archivo tiene 4.424 filas y 37 columnas, sin valores faltantes y sin filas duplicadas, como indica la documentación. Las variables binarias solo contienen 0 y 1 y los rangos son plausibles (edad de 17 a 70 años, notas de 95 a 190 sobre 200, desempleo entre el 7,6 % y el 16,2 %).
+- **Coherencia entre variables:** ninguna asignatura aprobada supera a las matriculadas. Hay 180 estudiantes sin asignaturas matriculadas en el 1.er semestre (77 *Dropout*, 75 *Graduate* y 28 *Enrolled*) y sin convalidaciones que lo expliquen; resulta llamativo que 75 consten como graduados. No se eliminan porque no hay un criterio documentado para considerarlos errores, pero se deja constancia de esta posible anomalía del origen de los datos.
+- **Notas medias iguales a 0:** 369 estudiantes tienen nota media 0 en el 1.er semestre habiendo sido evaluados. En todos ellos las asignaturas aprobadas son 0, así que el 0 significa «ninguna aprobada» y no un dato faltante. Se mantiene como 0.
+- **Tipos de variable:** las variables binarias y las categóricas codificadas se convierten a factor (con etiquetas en `gender` y en la modalidad de asistencia), y `Target` se ordena como *Dropout*, *Enrolled*, *Graduate*.
 
-Antes de analizar Target hay que asegurarse de que los datos se han leído bien y de que la variable está limpia.
+## 4.1 Pregunta 1: Distribución de la situación académica final
+### Planteamiento y Justificación
+El objetivo es cuantificar el tamaño de cada grupo de `Target` para decidir cómo tratar la categoría `Enrolled` (estudiantes que siguen matriculados y cuyo resultado final todavía no se conoce) y para saber si las comparaciones posteriores deben hacerse con porcentajes dentro de cada grupo en lugar de recuentos absolutos. Si las clases estuvieran muy desbalanceadas, comparar recuentos entre grupos favorecería siempre a la categoría más numerosa.
 
 ```{r}
-resumen <- datos %>%
+# 1. Tabla de frecuencias absolutas y relativas
+resumen <- datos_limpio %>%
   count(target) %>%
   mutate(porcentaje = n / sum(n) * 100)
 
-resumen
+print("Distribución de los estudiantes según su situación académica final:")
+print(resumen)
+```
 
+```{r}
+# 2. Gráfico de barras con recuentos y porcentajes
 ggplot(resumen, aes(x = target, y = n, fill = target)) +
-  geom_col(show.legend = FALSE) +
+  geom_col(alpha = 0.8, show.legend = FALSE) +
   geom_text(aes(label = paste0(n, " (", round(porcentaje, 1), " %)")),
             vjust = -0.5) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
   labs(title = "Distribución de los estudiantes según su situación final",
-       x = "Situación académica",
+       subtitle = "Recuento y porcentaje sobre el total de estudiantes",
+       x = "Situación académica final (Target)",
        y = "Número de estudiantes") +
   theme_minimal()
 ```
+
+```{r}
+# 3. Medidas de desbalance entre clases
+n_clases <- nrow(resumen)
+
+desbalance <- tibble(
+  clase_mayoritaria = as.character(resumen$target[which.max(resumen$n)]),
+  clase_minoritaria = as.character(resumen$target[which.min(resumen$n)]),
+  ratio_mayor_menor = max(resumen$n) / min(resumen$n),
+  pct_minoritaria   = min(resumen$porcentaje),
+  pct_esperado_si_equilibrado = 100 / n_clases
+)
+
+print("Medidas de desbalance:")
+print(desbalance)
+
+# Contraste chi-cuadrado de bondad de ajuste: ¿son las tres clases equiprobables?
+test_equilibrio <- chisq.test(table(datos_limpio$target))
+print(test_equilibrio)
+```
+
+```{r}
+# 4. Distribución si se excluye Enrolled (solo resultados finales conocidos)
+resumen_conocidos <- datos_limpio %>%
+  filter(target != "Enrolled") %>%
+  count(target) %>%
+  mutate(porcentaje = n / sum(n) * 100)
+
+print("Distribución considerando solo Dropout y Graduate:")
+print(resumen_conocidos)
+
+# Tasa de abandono sobre los estudiantes con resultado final conocido
+resumen_conocidos %>% filter(target == "Dropout") %>% pull(porcentaje)
+```
+
+**Resultado y decisión:** 2.209 estudiantes se gradúan (49,9 %), 1.421 abandonan (32,1 %) y 794 continúan matriculados (18,0 %). La clase mayoritaria es 2,78 veces mayor que la minoritaria y el contraste chi-cuadrado rechaza que las tres sean equiprobables, por lo que el desbalance es moderado. Como el resultado final de *Enrolled* se desconoce, se mantiene en el análisis pero se interpreta con cautela, y las comparaciones se hacen con porcentajes dentro de cada grupo.
 
 ## 4.2 Pregunta 2: El umbral crítico del primer semestre frente a la nota de acceso
 
 ### Planteamiento y Justificación
 El objetivo de este análisis es evaluar si la adaptación temprana al entorno universitario (medida a través del rendimiento en el primer semestre) es un discriminador del éxito o abandono final más potente que la nota previa de admisión (`Admission grade`). Para ello, analizaremos la distribución de las asignaturas aprobadas en el primer semestre y la nota media ponderada, comparándolas según el estado final del estudiante (`Target`).
 
-library(tidyverse)
-library(ggplot2)
-
+```{r}
 # 1. Resumen estadístico de asignaturas aprobadas en el 1.er semestre por Target
 resumen_sem1_aprobadas <- datos_limpio %>%
   group_by(target) %>%
@@ -320,7 +379,9 @@ resumen_sem1_aprobadas <- datos_limpio %>%
 
 print("Resumen estadístico de asignaturas aprobadas en el 1.er semestre:")
 print(resumen_sem1_aprobadas)
+```
 
+```{r}
 # 2. Gráfico de cajas (Boxplot) para comparar las asignaturas aprobadas por Target
 ggplot(datos_limpio, aes(x = target, y = curricular_units_1st_sem_approved, fill = target)) +
   geom_boxplot(alpha = 0.7, outlier.colour = "red", outlier.shape = 1) +
@@ -332,7 +393,10 @@ ggplot(datos_limpio, aes(x = target, y = curricular_units_1st_sem_approved, fill
   ) +
   theme_minimal() +
   theme(legend.position = "none")
+```
 
+
+```{r}
 # 3. Contraste numérico de la nota de admisión frente a la nota media del 1.er semestre
 resumen_notas <- datos_limpio %>%
   group_by(target) %>%
@@ -343,12 +407,60 @@ resumen_notas <- datos_limpio %>%
 
 print("Comparativa de notas de admisión frente a notas del 1.er semestre:")
 print(resumen_notas)
+```
+
+```{r}
+# 4. Contraste y tamaño del efecto (Dropout frente a Graduate)
+# La d de Cohen estandariza la diferencia de medias, lo que permite comparar
+# variables medidas en escalas distintas (recuento de asignaturas vs nota sobre 200)
+cohen_d <- function(x, grupo) {
+  g  <- levels(grupo)
+  x1 <- x[grupo == g[1]]
+  x2 <- x[grupo == g[2]]
+  sp <- sqrt(((length(x1) - 1) * var(x1) + (length(x2) - 1) * var(x2)) /
+               (length(x1) + length(x2) - 2))
+  (mean(x1) - mean(x2)) / sp
+}
+
+dg <- datos_limpio %>%
+  filter(target %in% c("Dropout", "Graduate")) %>%
+  droplevels()
+
+vars_q2 <- c("admission_grade",
+             "curricular_units_1st_sem_approved",
+             "curricular_units_1st_sem_grade")
+
+efecto_q2 <- map_dfr(vars_q2, function(v) {
+  tibble(variable   = v,
+         d_cohen    = cohen_d(dg[[v]], dg$target),
+         p_wilcoxon = wilcox.test(dg[[v]] ~ dg$target, exact = FALSE)$p.value)
+})
+
+print("Tamaño del efecto (Dropout - Graduate) y contraste de Wilcoxon:")
+print(efecto_q2)
+```
+
+```{r}
+# 5. Tasa de abandono según el número de asignaturas aprobadas en el 1.er semestre
+tasa_aprobadas <- datos_limpio %>%
+  mutate(tramo_aprobadas = cut(curricular_units_1st_sem_approved,
+                               breaks = c(-1, 0, 2, 4, 6, Inf),
+                               labels = c("0", "1-2", "3-4", "5-6", "7 o más"))) %>%
+  group_by(tramo_aprobadas) %>%
+  summarise(n = n(), tasa_abandono = mean(target == "Dropout") * 100)
+
+print("Tasa de abandono (%) según asignaturas aprobadas en el 1.er semestre:")
+print(tasa_aprobadas)
+```
+
+**Resultado y decisión:** Las medias de asignaturas aprobadas son 6,23 (*Graduate*), 4,32 (*Enrolled*) y 2,55 (*Dropout*), mientras que la nota de admisión apenas varía (128,8, 125,5 y 125,0). Como las variables están en escalas distintas, la comparación se hace con la d de Cohen (*Dropout* frente a *Graduate*): |d| = 1,37 para las asignaturas aprobadas y 1,25 para la nota media del 1.er semestre, frente a 0,26 para la nota de admisión. Todas las diferencias son significativas (Wilcoxon, p < 0,001), pero solo las del primer semestre tienen un efecto grande. Además, el abandono no crece de forma gradual: es del 79,4 % con 0 asignaturas aprobadas y del 71,4 % con 1-2, baja al 42,3 % con 3-4 y se queda en torno al 10-14 % a partir de 5. El tramo decisivo está, por tanto, entre 1-2 y 5-6 asignaturas aprobadas. Para comparar grupos se usan contrastes no paramétricos (Wilcoxon aquí y Kruskal-Wallis en 4.5), porque varias variables son recuentos o tienen distribuciones asimétricas, como se aprecia en los diagramas de cajas y en el violín de la edad, y por eso no se asume normalidad.
 
 ## 4.3 Pregunta 3: Vulnerabilidad financiera y su impacto real
 
 ### Planteamiento y Justificación
 Estudiamos la relación entre la restricción económica (ser deudor de tasas universitarias: `debtor` y no disponer de beca: `scholarship_holder`) y la probabilidad de abandono escolar (`Dropout`). El objetivo es cuantificar si el impago o la falta de ayudas multiplican el riesgo de abandono y si actúan de forma independiente al rendimiento académico.
 
+```{r}
 # 1. Tabla de contingencia cruzada entre condición de Deudor y Target (frecuencias y porcentajes)
 tabla_deuda <- table(datos_limpio$debtor, datos_limpio$target)
 prop_deuda <- prop.table(tabla_deuda, margin = 1) * 100 # Porcentajes por filas
@@ -357,11 +469,15 @@ print("Frecuencias absolutas (Deudor vs Target):")
 print(tabla_deuda)
 print("Proporciones por filas (%):")
 print(round(prop_deuda, 2))
+```
 
+```{r}
 # 2. Prueba estadística de Chi-cuadrado para evaluar independencia
 test_chi_deuda <- chisq.test(tabla_deuda)
 print(test_chi_deuda)
+```
 
+```{r}
 # 3. Gráfico de barras agrupadas: Deuda y Estado Final
 ggplot(datos_limpio, aes(x = debtor, fill = target)) +
   geom_bar(position = "fill") +
@@ -369,18 +485,75 @@ ggplot(datos_limpio, aes(x = debtor, fill = target)) +
   scale_x_discrete(labels = c("0" = "Al corriente de pago", "1" = "Deudor con la institución")) +
   labs(
     title = "Proporción de éxito y abandono según la situación de impago",
-    subtitle = paste("Contraste Chi-cuadrado: p-valor < 2.2e-16"),
+    subtitle = paste("Contraste Chi-cuadrado: p-valor =",
+                     format.pval(test_chi_deuda$p.value, digits = 3, eps = 2.2e-16)),
     x = "Condición financiera",
     y = "Proporción de estudiantes",
     fill = "Situación Final"
   ) +
   theme_minimal()
+```
+
+```{r}
+# 4. Beca: porcentajes por fila, contraste y tamaño del efecto (V de Cramér)
+tabla_beca <- table(datos_limpio$scholarship_holder, datos_limpio$target)
+
+print("Proporciones por filas (%) (Beca vs Target):")
+print(round(prop.table(tabla_beca, margin = 1) * 100, 2))
+print(chisq.test(tabla_beca))
+
+# V de Cramér: 0 = sin asociación, 1 = asociación perfecta
+cramers_v <- function(tabla) {
+  chi2 <- unname(chisq.test(tabla, correct = FALSE)$statistic)
+  sqrt(chi2 / (sum(tabla) * (min(dim(tabla)) - 1)))
+}
+
+efecto_financiero <- tibble(
+  variable = c("debtor", "scholarship_holder"),
+  v_cramer = c(cramers_v(tabla_deuda), cramers_v(tabla_beca))
+)
+print("Tamaño del efecto (V de Cramér):")
+print(efecto_financiero)
+```
+
+```{r}
+# 5. Combinación de variables: tasa de abandono según deuda y beca a la vez
+# (debtor: 1 = deudor; scholarship_holder: 1 = becado)
+tasa_deuda_beca <- datos_limpio %>%
+  group_by(debtor, scholarship_holder) %>%
+  summarise(n = n(), tasa_abandono = mean(target == "Dropout") * 100,
+            .groups = "drop")
+
+print("Tasa de abandono (%) según deuda y beca:")
+print(tasa_deuda_beca)
+```
+
+```{r}
+# 6. ¿Actúan de forma independiente al rendimiento? Regresión logística
+# Dropout (1) frente a Graduate (0); la nota de admisión se expresa por cada 10 puntos
+datos_glm <- datos_limpio %>%
+  filter(target != "Enrolled") %>%
+  mutate(abandono = as.integer(target == "Dropout"),
+         admission_grade_10 = admission_grade / 10)
+
+modelo_abandono <- glm(abandono ~ debtor + scholarship_holder +
+                         curricular_units_1st_sem_approved + admission_grade_10,
+                       data = datos_glm, family = binomial)
+
+# Odds ratio con intervalo de confianza al 95 % (Wald)
+or_tabla <- exp(cbind(OR = coef(modelo_abandono), confint.default(modelo_abandono)))
+print("Odds ratio de abandono (frente a graduarse):")
+print(round(or_tabla, 2))
+```
+
+**Resultado y decisión:** Los deudores abandonan el 62,0 % de las veces frente al 28,3 % de quienes están al corriente de pago, y los becados el 12,2 % frente al 38,7 % de los no becados. Ambas asociaciones son significativas (p < 0,001) y de tamaño moderado (V de Cramér de 0,24 para la deuda y 0,30 para la beca). Combinando ambos factores, los deudores sin beca abandonan el 67,1 % y los no deudores con beca solo el 10,1 %; incluso con beca, los deudores abandonan el 36,9 %. Para comprobar si el efecto es independiente del rendimiento se ajusta una regresión logística con deuda, beca, asignaturas aprobadas y nota de admisión: el impago multiplica por 6,4 las odds de abandono (IC 95 %: 4,8-8,7), la beca las reduce (OR = 0,23) y cada asignatura aprobada adicional las reduce un 42 % (OR = 0,58). La vulnerabilidad financiera mantiene su efecto una vez controlado el rendimiento académico.
 
 ## 4.4 Pregunta 4: Factores demográficos y modalidad de estudio
 
 ### Planteamiento y Justificación
 El objetivo es analizar cómo influyen la edad al matricularse (`age_at_enrollment`) y la modalidad de asistencia (`daytime_evening_attendance`) en los patrones de rendimiento y el estado final. Los estudiantes mayores o en turno vespertino suelen enfrentarse a cargas laborales o familiares que condicionan su permanencia en la universidad.
 
+```{r}
 # 1. Resumen estadístico de la edad según el estado final
 resumen_edad <- datos_limpio %>%
   group_by(target) %>%
@@ -395,6 +568,9 @@ resumen_edad <- datos_limpio %>%
 print("Estadísticos de edad según situación académica:")
 print(resumen_edad)
 
+```
+
+```{r}
 # 2. Gráfico de densidad / violín para visualizar la distribución de edades por Target
 ggplot(datos_limpio, aes(x = target, y = age_at_enrollment, fill = target)) +
   geom_violin(trim = FALSE, alpha = 0.6) +
@@ -406,20 +582,57 @@ ggplot(datos_limpio, aes(x = target, y = age_at_enrollment, fill = target)) +
   ) +
   theme_minimal() +
   theme(legend.position = "none")
+```
 
+```{r}
 # 3. Relación entre modalidad de asistencia y abandono
 tabla_turno <- table(datos_limpio$daytime_evening_attendance, datos_limpio$target)
 print("Tabla de contingencia (Modalidad de asistencia vs Target):")
 print(tabla_turno)
 print(chisq.test(tabla_turno))
+```
+
+```{r}
+# 4. Modalidad de asistencia: porcentajes por fila y tamaño del efecto
+print("Proporciones por filas (%) (Modalidad vs Target):")
+print(round(prop.table(tabla_turno, margin = 1) * 100, 2))
+cat("V de Cramér (modalidad vs Target):", round(cramers_v(tabla_turno), 3), "\n")
+```
+
+```{r}
+# 5. Edad: tamaño del efecto y contraste (Dropout frente a Graduate)
+dg_edad <- datos_limpio %>%
+  filter(target %in% c("Dropout", "Graduate")) %>%
+  droplevels()
+
+cat("d de Cohen (edad, Dropout - Graduate):",
+    round(cohen_d(dg_edad$age_at_enrollment, dg_edad$target), 3), "\n")
+print(wilcox.test(age_at_enrollment ~ target, data = dg_edad, exact = FALSE))
+```
+
+```{r}
+# 6. Tasa de abandono por tramos de edad
+tasa_edad <- datos_limpio %>%
+  mutate(tramo_edad = cut(age_at_enrollment,
+                          breaks = c(0, 19, 24, 29, Inf),
+                          labels = c("19 o menos", "20-24", "25-29", "30 o más"))) %>%
+  group_by(tramo_edad) %>%
+  summarise(n = n(), tasa_abandono = mean(target == "Dropout") * 100)
+
+print("Tasa de abandono (%) por tramos de edad:")
+print(tasa_edad)
+```
+
+**Resultado y decisión:** La edad media es de 21,8 años en *Graduate*, 22,4 en *Enrolled* y 26,1 en *Dropout*. La diferencia entre abandono y graduación es de tamaño medio (d de Cohen = 0,57; Wilcoxon, p < 0,001) y la tasa de abandono se dispara a partir de los 25 años: 21,0 % (19 o menos), 28,6 % (20-24), 57,6 % (25-29) y 54,1 % (30 o más). La modalidad vespertina también se asocia con más abandono (42,9 % frente al 30,8 % del turno diurno), pero el efecto es pequeño (V de Cramér = 0,08). La edad discrimina bastante mejor que el turno.
+
 
 ## 4.5 Pregunta 5: Sensibilidad al entorno macroeconómico
 
 ### Planteamiento y Justificación
 Finalmente, evaluamos si el contexto socioeconómico regional representado por el desempleo (`unemployment_rate`), la inflación (`inflation_rate`) y el PIB (`gdp`) ejerce una correlación apreciable en las tasas globales de éxito académico o si, por el contrario, el éxito depende de factores microeconómicos e individuales.
 
-library(dplyr)
 
+```{r}
 # 1. Resumen de variables macroeconómicas agrupadas por estado final del estudiante
 resumen_macro <- datos_limpio %>%
   group_by(target) %>%
@@ -432,6 +645,9 @@ resumen_macro <- datos_limpio %>%
 print("Valores medios macroeconómicos según el estado final del estudiante:")
 print(resumen_macro)
 
+```
+
+```{r}
 # 2. Matriz de correlación entre variables macroeconómicas y métricas de rendimiento académico
 vars_macro_rendimiento <- datos_limpio %>%
   select(unemployment_rate, inflation_rate, gdp, 
@@ -440,7 +656,79 @@ vars_macro_rendimiento <- datos_limpio %>%
 matriz_corr_macro <- cor(vars_macro_rendimiento, use = "complete.obs")
 print("Matriz de correlación (Macro vs Rendimiento Académico):")
 print(round(matriz_corr_macro, 3))
+```
 
+```{r}
+# 3. Contraste de Kruskal-Wallis y tamaño del efecto (eta cuadrado basado en H)
+vars_macro <- c("unemployment_rate", "inflation_rate", "gdp")
+
+efecto_macro <- map_dfr(vars_macro, function(v) {
+  kw <- kruskal.test(datos_limpio[[v]] ~ datos_limpio$target)
+  k  <- nlevels(datos_limpio$target)
+  n  <- nrow(datos_limpio)
+  tibble(variable = v,
+         H        = unname(kw$statistic),
+         p_valor  = kw$p.value,
+         eta2     = (unname(kw$statistic) - k + 1) / (n - k))
+})
+
+print("Kruskal-Wallis y tamaño del efecto (macro vs Target):")
+print(efecto_macro)
+```
+
+**Resultado y decisión:** Las medias macroeconómicas son casi idénticas entre los tres grupos (por ejemplo, desempleo del 11,6 %, 11,3 % y 11,6 % en *Dropout*, *Enrolled* y *Graduate*) y sus correlaciones con las asignaturas aprobadas son prácticamente nulas (|r| ≤ 0,05). El contraste de Kruskal-Wallis resulta significativo para el desempleo (p = 0,002) y el PIB (p < 0,001) por el gran tamaño muestral, pero el tamaño del efecto es despreciable (η² ≈ 0,003 en ambos casos), y la inflación ni siquiera es significativa (p = 0,30). Las variables macroeconómicas no explican el abandono de forma relevante.
+
+## 4.6 Combinación de variables y detección temprana
+
+### Planteamiento y Justificación
+Las fases 4 y 5 del plan de exploración piden combinar variables y valorar con qué antelación puede detectarse el abandono. Para ello se compara la capacidad de distinguir *Dropout* de *Graduate* (se excluye *Enrolled* por no tener resultado final conocido) de tres modelos de regresión logística con información acumulada: (1) solo variables conocidas en la matrícula, (2) añadiendo el rendimiento del 1.er semestre y (3) añadiendo también el del 2.º semestre. La capacidad se mide con el AUC sobre una partición de prueba del 30 % que no se usa para ajustar los modelos. El objetivo no es construir un modelo final, sino cuantificar cuánto aporta cada fase de información.
+
+```{r}
+# 1. Datos y partición entrenamiento / prueba (estratificada por Target)
+datos_modelo <- datos_limpio %>%
+  filter(target != "Enrolled") %>%
+  mutate(abandono = as.integer(target == "Dropout"))
+
+vars_matricula <- c("age_at_enrollment", "admission_grade", "previous_qualification_grade",
+                    "gender", "scholarship_holder", "displaced",
+                    "daytime_evening_attendance", "application_order")
+vars_sem1 <- c("curricular_units_1st_sem_approved", "curricular_units_1st_sem_grade")
+vars_sem2 <- c("curricular_units_2nd_sem_approved", "curricular_units_2nd_sem_grade")
+
+set.seed(123)
+idx_train <- createDataPartition(factor(datos_modelo$abandono), p = 0.7, list = FALSE)
+train <- datos_modelo[idx_train, ]
+test  <- datos_modelo[-idx_train, ]
+```
+
+```{r}
+# 2. AUC de los tres modelos en la muestra de prueba
+# AUC = probabilidad de que un estudiante que abandona reciba una puntuación mayor
+# que uno que se gradúa (0,5 = azar; 1 = discriminación perfecta)
+auc <- function(y, p) {
+  r  <- rank(p)
+  n1 <- sum(y == 1)
+  n0 <- sum(y == 0)
+  (sum(r[y == 1]) - n1 * (n1 + 1) / 2) / (n1 * n0)
+}
+
+ajustar_auc <- function(vars) {
+  modelo <- glm(reformulate(vars, response = "abandono"), data = train, family = binomial)
+  auc(test$abandono, predict(modelo, newdata = test, type = "response"))
+}
+
+tabla_auc <- tibble(
+  modelo = c("1. Solo matrícula", "2. + 1.er semestre", "3. + 2.º semestre"),
+  auc    = c(ajustar_auc(vars_matricula),
+             ajustar_auc(c(vars_matricula, vars_sem1)),
+             ajustar_auc(c(vars_matricula, vars_sem1, vars_sem2)))
+)
+
+print("AUC en la muestra de prueba:")
+print(tabla_auc)
+```
+
+**Resultado y decisión:** El AUC pasa de aproximadamente 0,75-0,78 con la información de la matrícula a 0,87-0,89 al añadir el 1.er semestre y a 0,91-0,92 con el 2.º. Casi todo el salto se produce con el 1.er semestre, mientras que el 2.º aporta poco más. El abandono puede, por tanto, detectarse razonablemente pronto, al terminar el primer semestre, y esperar al segundo apenas mejora la detección. El valor exacto del AUC depende de la partición aleatoria (se fija `set.seed(123)`), por lo que debe leerse como orden de magnitud.
 
 # 5. PRINCIPALES HALLAZGOS Y CONCLUSIONES
 
@@ -448,28 +736,57 @@ A lo largo de este análisis exploratorio de datos (EDA), hemos investigado las 
 
 ## 5.1 Hallazgos Principales
 
-1. **El umbral crítico del primer semestre frente a la nota de acceso:**
-   * **Evidencia:** Los datos demuestran que el rendimiento académico temprano es el discriminador más potente del éxito o abandono escolar. Mientras que los estudiantes que se gradúan aprueban una media de $6,23$ asignaturas en el primer semestre, aquellos que abandonan (*Dropout*) se sitúan en una media de apenas $2,55$ asignaturas aprobadas. En contraste, las diferencias en la nota de admisión universitaria (`Admission grade`) entre ambos grupos son considerablemente menores.
-   * **Interpretación:** La adaptación inicial a la dinámica universitaria y el éxito en los primeros exámenes de septiembre/enero pesan de forma decisiva en la permanencia del estudiante, superando con creces el valor predictivo de las calificaciones obtenidas en la enseñanza secundaria previa.
+1. **Distribución de la situación final y desbalance de clases:**
 
-2. **Impacto crítico de la vulnerabilidad financiera:**
-   * **Evidencia:** El análisis de contingencia revela una asociación estadísticamente muy significativa ($p\text{-valor} < 0,001$) entre el impago de tasas (`Debtor`) y la probabilidad de abandono. El $62\%$ de los estudiantes con deudas económicas causan baja, frente a un $53,8\%$ de graduación entre los alumnos al corriente de pago.
+   * **Evidencia:** De los $4.424$ estudiantes, $2.209$ se gradúan ($49{,}9\%$), $1.421$ abandonan ($32{,}1\%$) y $794$ continúan matriculados ($18{,}0\%$). La clase mayoritaria (*Graduate*) es $2{,}78$ veces mayor que la minoritaria (*Enrolled*), y el contraste chi-cuadrado de bondad de ajuste rechaza que las tres clases sean equiprobables ($p\text{-valor} < 0{,}001$). Al excluir *Enrolled*, la tasa de abandono entre los resultados conocidos sube del $32{,}1\%$ al $39{,}1\%$.
+   
+   * **Interpretación:** El desbalance es moderado, pero suficiente para que los recuentos absolutos no sean comparables entre grupos, por lo que el resto del análisis se apoya en porcentajes y medidas dentro de cada grupo. Además, como el resultado final de *Enrolled* no se conoce, esta categoría se mantiene en el análisis, pero las conclusiones que dependen de ella deben leerse con cautela.
+
+<br>
+2. **El umbral crítico del primer semestre frente a la nota de acceso:**
+
+   * **Evidencia:** Los datos demuestran que el rendimiento académico temprano es el discriminador más potente del éxito o abandono escolar. Mientras que los estudiantes que se gradúan aprueban una media de $6{,}23$ asignaturas en el primer semestre, aquellos que abandonan (*Dropout*) se sitúan en una media de apenas $2{,}55$ asignaturas aprobadas. En contraste, las diferencias en la nota de admisión universitaria (`Admission grade`) entre ambos grupos son considerablemente menores: en tamaño del efecto (d de Cohen, *Dropout* frente a *Graduate*), el de las asignaturas aprobadas es $|d| = 1{,}37$ y el de la nota de admisión, $0{,}26$. Además, el abandono es del $71$–$79\%$ con $0$–$2$ asignaturas aprobadas y se queda en torno al $10$–$14\%$ a partir de $5$.
+   
+   * **Interpretación:** La adaptación inicial a la dinámica universitaria y el éxito en los primeros exámenes de septiembre/enero pesan de forma decisiva en la permanencia del estudiante, superando con creces el valor predictivo de las calificaciones obtenidas en la enseñanza secundaria previa.
+   
+<br>
+3. **Impacto crítico de la vulnerabilidad financiera:**
+
+   * **Evidencia:** El análisis de contingencia revela una asociación estadísticamente muy significativa ($p\text{-valor} < 0{,}001$) entre el impago de tasas (`Debtor`) y la probabilidad de abandono. El $62{,}0\%$ de los estudiantes con deudas económicas abandona, frente al $28{,}3\%$ de los que están al corriente de pago. La asociación es de tamaño moderado (V de Cramér $= 0{,}24$) y se mantiene al controlar el rendimiento: en la regresión logística (*Dropout* frente a *Graduate*), el impago multiplica por $6{,}4$ las odds de abandono (IC 95 %: $4{,}8$–$8{,}7$) y la beca las reduce (OR $= 0{,}23$).
+   
    * **Interpretación:** La restricción económica opera como un factor de vulnerabilidad extremo que multiplica el riesgo de abandono escolar, evidenciando la necesidad de mecanismos institucionales de apoyo financiero y moratorias flexibles.
 
-3. **El perfil demográfico y la edad de matriculación:**
-   * **Evidencia:** La edad media de los estudiantes que se gradúan se sitúa en torno a los $21,8$ años, mientras que en el grupo de abandono asciende hasta los $26,1$ años. 
+<br>
+4. **El perfil demográfico y la edad de matriculación:**
+
+   * **Evidencia:** La edad media de los estudiantes que se gradúan se sitúa en torno a los $21{,}8$ años, mientras que en el grupo de abandono asciende hasta los $26{,}1$ años. El efecto es de tamaño medio ($d = 0{,}57$) y el abandono se dispara a partir de los $25$ años ($57{,}6\%$ entre los $25$ y los $29$, frente al $21{,}0\%$ hasta los $19$). La modalidad vespertina también se asocia con más abandono ($42{,}9\%$ frente al $30{,}8\%$ del turno diurno), pero con un efecto pequeño ($V = 0{,}08$).
+   
    * **Interpretación:** Los estudiantes de mayor edad suelen enfrentarse a una asincronía temporal derivada de la combinación de estudios con responsabilidades laborales o familiares, lo que reduce su margen de dedicación académica y eleva la tasa de abandono.
 
-4. **Invalidez de la hipótesis macroeconómica externa:**
-   * **Evidencia:** Las variables macroeconómicas regionales (`Unemployment rate`, `Inflation rate`, `GDP`) muestran medias prácticamente idénticas entre los tres estados de la variable `Target`.
+<br>
+5. **Efecto macroeconómico despreciable:**
+
+   * **Evidencia:** Las variables macroeconómicas regionales (`Unemployment rate`, `Inflation rate`, `GDP`) muestran medias prácticamente idénticas entre los tres estados de la variable `Target`. Aunque el contraste de Kruskal-Wallis resulta significativo para el desempleo y el PIB por el gran tamaño muestral, el tamaño del efecto es despreciable ($\eta^2 \approx 0{,}003$).
+   
    * **Interpretación:** El éxito o fracaso académico en esta cohorte no responde a fluctuaciones coyunturales de la economía general del país, sino primordialmente a factores microeconómicos, institucionales y de rendimiento académico individual.
+
+<br>
+6. **Capacidad de detección temprana:**
+
+   * **Evidencia:** En una muestra de prueba, un modelo logístico que distingue *Dropout* de *Graduate* alcanza un AUC de aproximadamente $0{,}75$–$0{,}78$ usando solo información de la matrícula, de $0{,}87$–$0{,}89$ al añadir el rendimiento del primer semestre y de $0{,}91$–$0{,}92$ al añadir el del segundo.
+
+   * **Interpretación:** La mayor parte de la información sobre el riesgo de abandono llega con el primer semestre, por lo que es el momento natural para una alerta temprana; los datos de matrícula por sí solos orientan, pero discriminan bastante peor.
 
 ## 5.2 Limitaciones Metodológicas
 
-Las conclusiones obtenidas deben interpretarse bajo el marco de las siguientes restricciones:
-* **Naturaleza observacional:** El estudio identifica asociaciones y perfiles de riesgo robustos, pero no permite establecer relaciones de causalidad directa.
-* **Sesgo institucional:** Al proceder los datos de una única institución universitaria portuguesa, la generalización de los resultados a otros sistemas educativos o países debe realizarse con cautela.
-* **Incertidumbre en la categoría `Enrolled`:** Los estudiantes en curso activo no disponen de un resultado final definitivo dentro de la ventana temporal del dataset.
+Las conclusiones obtenidas deben interpretarse bajo el marco de las siguientes restricciones:  
+
+* **Naturaleza observacional:** El estudio identifica asociaciones y perfiles de riesgo robustos, pero no permite establecer relaciones de causalidad directa.  
+* **Sesgo institucional:** Al proceder los datos de una única institución universitaria portuguesa, la generalización de los resultados a otros sistemas educativos o países debe realizarse con cautela.  
+* **Incertidumbre en la categoría `Enrolled`:** Los estudiantes en curso activo no disponen de un resultado final definitivo dentro de la ventana temporal del dataset.     
+* **Significación frente a relevancia:** Con $4.424$ observaciones, diferencias mínimas resultan significativas; por ello los contrastes se acompañan del tamaño del efecto.  
+* **Alcance de la detección temprana:** Los modelos se evalúan en una única partición aleatoria y sin variables como la titulación; sirven para comparar fases de información, no como modelo predictivo definitivo.
+
 
 ---
 
@@ -480,6 +797,7 @@ En cumplimiento de las directrices académicas de transparencia metodológica, s
 ## 6.1 Tareas en las que se ha Utilizado
 * **Soporte metodológico y estructuración:** Orientación en el diseño del plan de trabajo por fases y en la formulación formal de las preguntas de investigación y sus correspondientes objetivos.
 * **Generación y depuración de código en R:** Asistencia en la sintaxis de `tidyverse`, `ggplot2` y funciones estadísticas para la limpieza de datos, el cálculo de estadísticos descriptivos y la generación de gráficos de distribución.
+* **Diseño de contrastes y modelos:** Asistencia en la elección de medidas de tamaño del efecto (d de Cohen, V de Cramér, η²), contrastes no paramétricos y la regresión logística usada para valorar la detección temprana.
 * **Revisión de estilo y redacción académica:** Apoyo en la maquetación en formato Quarto (`.qmd`) y en la estructuración formal del informe técnico.
 
 ## 6.2 Integración en el Proceso de Trabajo
@@ -487,6 +805,9 @@ La IA se ha integrado como un **asistente de colaboración interactivo**, adopta
 
 ## 6.3 Verificación de la Información, el Código y las Interpretaciones
 Para garantizar la máxima rigorosidad científica y evitar alucinaciones o errores técnicos, todo el contenido generado con asistencia de IA ha sido rigurosamente verificado mediante los siguientes filtros:
-1. **Verificación empírica del código:** Los scripts de R no se han dado por válidos sin antes ejecutarse de forma independiente sobre el archivo `data(1).csv`, comprobando que los nombres de las columnas, las dimensiones del dataframe ($4.424 \times 37$) y los resultados numéricos devueltos coincidían exactamente con la realidad estadística de los datos.
-2. **Contraste de hipótesis y significte estadística:** Se han revisado los estadísticos devueltos (medias, tablas de contingencia y contrastes de independencia) para asegurar que las interpretaciones ofrecidas en el informe se apoyan estrictamente en la evidencia matemática y no en suposiciones del modelo de lenguaje.
+
+1. **Verificación empírica del código:** Los scripts de R no se han dado por válidos sin antes ejecutarse de forma independiente sobre el archivo `data.csv`, comprobando que los nombres de las columnas, las dimensiones del dataframe ($4.424 \times 37$) y los resultados numéricos devueltos coincidían exactamente con la realidad estadística de los datos.
+
+2. **Contraste de hipótesis y significación estadística:** Se han revisado los estadísticos devueltos (medias, tablas de contingencia y contrastes de independencia) para asegurar que las interpretaciones ofrecidas en el informe se apoyan estrictamente en la evidencia matemática y no en suposiciones del modelo de lenguaje.
+
 3. **Revisión colegiada del grupo:** Cada integrante del equipo ha validado los apartados teóricos y las conclusiones para asegurar su coherencia con los criterios de evaluación de la asignatura de Inferencia Estadística.
